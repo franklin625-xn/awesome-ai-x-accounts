@@ -1,0 +1,29 @@
+name: Validate account snapshot
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate data
+        run: python scripts/validate.py
+      - name: Validate selection and research
+        run: python scripts/validate_curated.py
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Check generated README
+        run: python scripts/generate_readme.py --check
+      - name: Regenerate and check for differences
+        run: |
+          python scripts/generate_readme.py
+          python scripts/generate_curated.py --check
+          python scripts/generate_curated.py
+          git diff --exit-code -- README.md docs/ORIGINAL_100.md docs/RESEARCH.md
